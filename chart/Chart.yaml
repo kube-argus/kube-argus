@@ -1,0 +1,14 @@
+apiVersion: v2
+name: kargus
+description: Drive Kubernetes RBAC from Google Workspace group membership (operator + OIDC broker)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - rbnac
+  - crd
+  - oidc
+  - idp
+home: https://github.com:kube-argus/kargus.git
+sources:
+  - https://github.com:kube-argus/kargus.git

@@ -1,0 +1,139 @@
+{{- if .Values.operator.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "kargus.operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "kargus.operator.fullname" . }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["serviceaccounts"]
+    verbs: ["create", "delete", "get", "list", "watch"]
+  - apiGroups: ["kargus.io"]
+    resources: ["userauthenticationbinds"]
+    verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["kargus.io"]
+    resources: ["userauthenticationbinds/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["kargus.io"]
+    resources: ["userauthenticationbinds/status"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "roles"]
+    # bind: required to grant roles the operator does not itself hold
+    # (Kubernetes privilege-escalation prevention for (Cluster)RoleBindings).
+    verbs: ["get", "list", "watch", "bind"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterrolebindings", "rolebindings"]
+    verbs: ["create", "delete", "get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kargus.operator.fullname" . }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kargus.operator.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kargus.operator.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+{{- if .Values.operator.leaderElect }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "kargus.operator.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "kargus.operator.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "kargus.operator.fullname" . }}-leader-election
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kargus.operator.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kargus.operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: operator
+spec:
+  replicas: {{ .Values.operator.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: operator
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "kargus.labels" . | nindent 8 }}
+        app.kubernetes.io/component: operator
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "kargus.operator.fullname" . }}
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: manager
+          image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
+          imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          command: ["/manager"]
+          args:
+            - --health-probe-bind-address=:8081
+            {{- if .Values.operator.leaderElect }}
+            - --leader-elect
+            {{- end }}
+          ports:
+            - { name: health, containerPort: 8081 }
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8081 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /readyz, port: 8081 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          resources:
+            {{- toYaml .Values.operator.resources | nindent 12 }}
+{{- end }}

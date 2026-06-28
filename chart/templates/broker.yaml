@@ -1,0 +1,240 @@
+{{- if .Values.broker.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: broker
+---
+# Broker manages CRs and mints SA tokens in the bind namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ include "kargus.bindNamespace" . }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["kargus.io"]
+    resources: ["userauthenticationbinds"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["kargus.io"]
+    resources: ["userauthenticationbinds/status"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["serviceaccounts/token"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ include "kargus.bindNamespace" . }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "kargus.broker.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kargus.broker.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+data:
+  LISTEN_ADDR: ":8080"
+  ISSUER: {{ .Values.broker.config.issuer | quote }}
+  IDP_TYPE: {{ .Values.broker.config.idpType | quote }}
+  IDP_ISSUER: {{ .Values.broker.config.idpIssuer | quote }}
+  IDP_REDIRECT_URL: {{ .Values.broker.config.idpRedirectURL | quote }}
+  IDP_SCOPES: {{ .Values.broker.config.idpScopes | quote }}
+  IDP_GROUPS_CLAIM: {{ .Values.broker.config.idpGroupsClaim | quote }}
+  GOOGLE_DELEGATED_ADMIN: {{ .Values.broker.config.googleDelegatedAdmin | quote }}
+  GOOGLE_CREDENTIALS_FILE: {{ include "kargus.googleCredsFile" . | quote }}
+  ALLOWED_DOMAINS: {{ .Values.broker.config.allowedDomains | quote }}
+  CLIENT_ID: {{ .Values.broker.config.clientID | quote }}
+  REDIRECT_URIS: {{ .Values.broker.config.redirectURIs | quote }}
+  BIND_NAMESPACE: {{ include "kargus.bindNamespace" . | quote }}
+  BIND_TTL: {{ .Values.broker.config.bindTTL | quote }}
+  TOKEN_AUDIENCES: {{ .Values.broker.config.tokenAudiences | quote }}
+  SESSION_STORE: {{ .Values.broker.config.sessionStore | quote }}
+  {{- with (include "kargus.redisAddr" .) }}
+  REDIS_ADDR: {{ . | quote }}
+  {{- end }}
+{{- if .Values.broker.secret.create }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  IDP_CLIENT_ID: {{ .Values.broker.secret.idpClientID | quote }}
+  IDP_CLIENT_SECRET: {{ .Values.broker.secret.idpClientSecret | quote }}
+  {{- with .Values.broker.secret.clientSecret }}
+  CLIENT_SECRET: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.broker.secret.idTokenSigningKey }}
+  ID_TOKEN_SIGNING_KEY: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.broker.secret.googleCredentials }}
+  sa.json: {{ . | quote }}
+  {{- end }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: broker
+spec:
+  replicas: {{ .Values.broker.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: broker
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "kargus.labels" . | nindent 8 }}
+        app.kubernetes.io/component: broker
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "kargus.broker.fullname" . }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: broker
+          image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag }}"
+          imagePullPolicy: {{ .Values.broker.image.pullPolicy }}
+          ports:
+            - { name: http, containerPort: 8080 }
+          {{- if .Values.broker.tls.enabled }}
+          env:
+            - { name: TLS_CERT_FILE, value: /etc/tls/tls.crt }
+            - { name: TLS_KEY_FILE, value: /etc/tls/tls.key }
+          {{- end }}
+          envFrom:
+            - configMapRef: { name: {{ include "kargus.broker.fullname" . }} }
+            {{- if or .Values.broker.secret.create .Values.broker.secret.existingSecret }}
+            - secretRef: { name: {{ .Values.broker.secret.existingSecret | default (include "kargus.broker.fullname" .) }} }
+            {{- end }}
+          {{- $scheme := ternary "HTTPS" "HTTP" .Values.broker.tls.enabled }}
+          livenessProbe:
+            httpGet: { path: /healthz, port: http, scheme: {{ $scheme }} }
+          readinessProbe:
+            httpGet: { path: /healthz, port: http, scheme: {{ $scheme }} }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          resources:
+            {{- toYaml .Values.broker.resources | nindent 12 }}
+          {{- $gsa := and .Values.broker.secret.create .Values.broker.secret.googleCredentials }}
+          {{- if or $gsa .Values.broker.tls.enabled }}
+          volumeMounts:
+            {{- if $gsa }}
+            - name: google-sa
+              mountPath: {{ dir (include "kargus.googleCredsMountPath" .) }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.broker.tls.enabled }}
+            - name: tls
+              mountPath: /etc/tls
+              readOnly: true
+            {{- end }}
+          {{- end }}
+      {{- if or $gsa .Values.broker.tls.enabled }}
+      volumes:
+        {{- if $gsa }}
+        - name: google-sa
+          secret:
+            secretName: {{ include "kargus.broker.fullname" . }}
+            items:
+              - key: sa.json
+                path: {{ base (include "kargus.googleCredsMountPath" .) }}
+        {{- end }}
+        {{- if .Values.broker.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ required "broker.tls.secretName is required when broker.tls.enabled" .Values.broker.tls.secretName }}
+        {{- end }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: broker
+spec:
+  type: {{ .Values.broker.service.type }}
+  selector:
+    app.kubernetes.io/component: broker
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - { name: http, port: {{ .Values.broker.service.port }}, targetPort: http }
+{{- if .Values.broker.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: broker
+  {{- $cm := dict }}
+  {{- with .Values.broker.ingress.tls.issuer.name }}
+  {{- if eq $.Values.broker.ingress.tls.issuer.kind "Issuer" }}
+  {{- $cm = dict "cert-manager.io/issuer" . }}
+  {{- else }}
+  {{- $cm = dict "cert-manager.io/cluster-issuer" . }}
+  {{- end }}
+  {{- end }}
+  {{- $annotations := merge (deepCopy .Values.broker.ingress.annotations) $cm }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.broker.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.broker.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ include "kargus.brokerHost" . | quote }}
+      secretName: {{ .Values.broker.ingress.tls.secretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ include "kargus.brokerHost" . | quote }}
+      http:
+        paths:
+          - path: {{ .Values.broker.ingress.path }}
+            pathType: {{ .Values.broker.ingress.pathType }}
+            backend:
+              service:
+                name: {{ include "kargus.broker.fullname" . }}
+                port:
+                  number: {{ .Values.broker.service.port }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,134 @@
+nameOverride: ""
+fullnameOverride: ""
+
+operator:
+  enabled: true
+  replicas: 1
+  leaderElect: true
+  image:
+    repository: ghcr.io/lucasgolino/kargus-operator
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    limits: { cpu: 500m, memory: 128Mi }
+    requests: { cpu: 10m, memory: 64Mi }
+
+broker:
+  enabled: true
+  replicas: 1
+  image:
+    repository: ghcr.io/lucasgolino/kargus-broker
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    host: "" # defaults to the host of broker.config.issuer (keeps the cert SAN in sync)
+    path: /
+    pathType: Prefix
+    tls:
+      enabled: false
+      secretName: "" # TLS secret; cert-manager creates it when issuer.name is set
+      # cert-manager: when name is set, the matching annotation is added
+      # (cert-manager.io/cluster-issuer or cert-manager.io/issuer per kind).
+      issuer:
+        name: ""
+        kind: ClusterIssuer # ClusterIssuer | Issuer
+
+  # Serve HTTPS directly from the broker (terminate TLS in-process) instead of at
+  # the ingress. secretName is a kubernetes.io/tls Secret (tls.crt + tls.key),
+  # e.g. issued by cert-manager. With this on, point the ingress at the backend
+  # over HTTPS (e.g. nginx annotation backend-protocol: HTTPS) or use TLS passthrough.
+  tls:
+    enabled: false
+    secretName: ""
+  resources:
+    limits: { cpu: 500m, memory: 128Mi }
+    requests: { cpu: 10m, memory: 64Mi }
+
+  # Non-secret configuration (rendered into a ConfigMap).
+  config:
+    issuer: "https://broker.example.com"
+    # Upstream IdP (any OIDC-capable provider).
+    idpType: "oidc" # oidc (generic) | google
+    idpIssuer: "https://idp.example.com" # google: https://accounts.google.com
+    idpRedirectURL: "https://broker.example.com/callback"
+    idpScopes: "openid,email,profile,groups"
+    idpGroupsClaim: "groups" # generic OIDC: claim holding group ids
+    googleDelegatedAdmin: "" # required when idpType=google
+    googleCredentialsFile: "" # optional service-account JSON path
+    allowedDomains: "golinux.network"
+    clientID: "dashboard"
+    redirectURIs: "https://client.example.com/oidc/callback"
+    bindNamespace: "" # defaults to the release namespace
+    bindTTL: "12h"
+    # Empty = SA token bound to the apiserver default audience (accepted natively).
+    # Only set when the token is consumed by something other than this apiserver.
+    tokenAudiences: ""
+    sessionStore: "memory" # memory | redis
+
+  # Secrets. Either provide values (create: true) or point at an existing Secret.
+  secret:
+    create: true
+    existingSecret: ""
+    idpClientID: ""
+    idpClientSecret: ""
+    clientSecret: "" # optional, confidential OIDC client
+    # RSA private key (PEM) used to sign broker id_tokens. REQUIRED for >1 replica
+    # and to survive restarts. Generate: openssl genrsa 2048
+    # Inject with: --set-file broker.secret.idTokenSigningKey=id_token.pem
+    # Leave empty for single-replica dev (an ephemeral key is generated).
+    idTokenSigningKey: ""
+    # Google service-account JSON key (idpType=google). Inject the file contents,
+    # e.g.  helm install ... --set-file broker.secret.googleCredentials=sa.json
+    # When set, it is stored in the broker Secret, mounted, and GOOGLE_CREDENTIALS_FILE
+    # is pointed at it automatically. Leave empty to use ADC / Workload Identity.
+    googleCredentials: ""
+
+  # Redis address for SESSION_STORE=redis. Leave empty to auto-use the bundled
+  # dev Redis below when redis.enabled=true.
+  redisAddr: ""
+
+# kube-apiserver auth proxy. Verifies broker id_tokens and forwards to the
+# apiserver as the user's ServiceAccount token, so the apiserver needs NO OIDC
+# config (works on GKE/EKS/self-managed). Point the OIDC client's cluster
+# endpoint at this proxy. Uses the same image as the broker (command: /proxy).
+proxy:
+  enabled: false
+  replicas: 1
+  image:
+    repository: ghcr.io/lucasgolino/kargus-proxy
+    tag: latest
+    pullPolicy: IfNotPresent
+  clientID: "headlamp" # expected audience of the broker id_token
+  usernameClaim: "email" # claim mapped to the ServiceAccount name
+  tokenExpirationSeconds: 600
+  # Where the proxy fetches the broker JWKS. Empty => the broker's in-cluster
+  # Service (no external DNS). Set to https://<issuer>/jwks if the broker isn't
+  # in this release, or to an https URL when broker.tls.enabled.
+  jwksURL: ""
+  service:
+    type: ClusterIP
+    port: 443
+  # The proxy serves TLS so the OIDC client trusts it as the "apiserver".
+  tls:
+    enabled: true
+    # generate: chart self-signs a cert (+ CA) for the proxy Service DNS names and
+    # stores it in a Secret, preserved across upgrades. The client trusts the CA in
+    # that Secret's ca.crt. Set generate=false and provide your own secretName to
+    # use cert-manager / an existing kubernetes.io/tls Secret.
+    generate: true
+    secretName: "" # defaults to <release>-proxy-tls
+  resources:
+    limits: { cpu: "1", memory: 256Mi }
+    requests: { cpu: 50m, memory: 64Mi }
+
+# Bring-your-own Redis by default. Enable this only for development: a single,
+# non-persistent Redis so SESSION_STORE=redis works without external infra.
+redis:
+  enabled: false
+  image: redis:7-alpine

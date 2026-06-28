@@ -1,0 +1,80 @@
+# Broker Deployment + Service. Config comes from a ConfigMap (non-secret) and a
+# Secret (client secrets). With SESSION_STORE=redis the broker scales to N replicas.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kargus-broker
+  namespace: kargus-system
+  labels: { app: kargus-broker }
+spec:
+  replicas: 1 # bump with SESSION_STORE=redis for HA
+  selector:
+    matchLabels: { app: kargus-broker }
+  template:
+    metadata:
+      labels: { app: kargus-broker }
+    spec:
+      serviceAccountName: kargus-broker
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: broker
+          image: ghcr.io/lucasgolino/kargus-broker:latest
+          ports:
+            - { name: http, containerPort: 8080 }
+          envFrom:
+            - configMapRef: { name: kargus-broker-config }
+            - secretRef: { name: kargus-broker-secrets }
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kargus-broker
+  namespace: kargus-system
+spec:
+  selector: { app: kargus-broker }
+  ports:
+    - { name: http, port: 80, targetPort: http }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kargus-broker-config
+  namespace: kargus-system
+data:
+  ISSUER: "https://broker.example.com"
+  IDP_TYPE: "oidc" # oidc (generic) | google
+  IDP_ISSUER: "https://idp.example.com" # for google: https://accounts.google.com
+  IDP_REDIRECT_URL: "https://broker.example.com/callback"
+  IDP_SCOPES: "openid,email,profile,groups"
+  IDP_GROUPS_CLAIM: "groups" # generic OIDC: claim holding group ids
+  # GOOGLE_DELEGATED_ADMIN: "admin@golinux.network"  # required when IDP_TYPE=google
+  ALLOWED_DOMAINS: "golinux.network"
+  CLIENT_ID: "dashboard"
+  REDIRECT_URIS: "https://client.example.com/oidc/callback"
+  BIND_NAMESPACE: "kargus-system"
+  BIND_TTL: "12h"
+  # Empty = SA token bound to the apiserver's default audience (accepted natively).
+  TOKEN_AUDIENCES: ""
+  SESSION_STORE: "memory" # set "redis" + REDIS_ADDR for HA
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kargus-broker-secrets
+  namespace: kargus-system
+type: Opaque
+stringData:
+  IDP_CLIENT_ID: "REPLACE"
+  IDP_CLIENT_SECRET: "REPLACE"
+  # CLIENT_SECRET: "REPLACE"   # optional, confidential OIDC client
+  # REDIS_ADDR: "redis:6379"   # required when SESSION_STORE=redis

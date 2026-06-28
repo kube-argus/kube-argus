@@ -1,0 +1,17 @@
+kargus {{ .Chart.AppVersion }} installed into namespace {{ .Release.Namespace }}.
+
+{{ if .Values.operator.enabled }}✓ operator (controller-manager){{ else }}✗ operator disabled{{ end }}
+{{ if .Values.broker.enabled }}✓ broker (OIDC) — Service {{ include "kargus.broker.fullname" . }}:{{ .Values.broker.service.port }}{{ else }}✗ broker disabled{{ end }}
+{{ if .Values.redis.enabled }}✓ dev Redis (do NOT use in production){{ end }}
+
+Bind namespace (CRs + per-user ServiceAccounts): {{ include "kargus.bindNamespace" . }}
+
+Next:
+  kubectl annotate clusterrole view rbac.kargus.io/group=group/g12312312
+  kubectl get userauthenticationbind -n {{ include "kargus.bindNamespace" . }}
+
+{{- if and .Values.broker.enabled (eq .Values.broker.config.sessionStore "redis") (not (include "kargus.redisAddr" .)) }}
+
+WARNING: SESSION_STORE=redis but no Redis address resolved. Set broker.redisAddr
+or redis.enabled=true.
+{{- end }}

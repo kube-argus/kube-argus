@@ -1,0 +1,45 @@
+{{- if .Values.redis.enabled }}
+# Development-only Redis: single replica, no persistence. NOT for production —
+# bring your own Redis and set broker.redisAddr instead.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kargus.redis.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: redis
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "kargus.labels" . | nindent 8 }}
+        app.kubernetes.io/component: redis
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image | quote }}
+          ports:
+            - { name: redis, containerPort: 6379 }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kargus.redis.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  selector:
+    app.kubernetes.io/component: redis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - { name: redis, port: 6379, targetPort: redis }
+{{- end }}

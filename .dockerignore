@@ -1,0 +1,10 @@
+# Keep the build context small: only operator/ and service/ are needed.
+.git
+docs
+chart
+**/node_modules
+**/build
+**/bin
+*.md
+go.work
+go.work.sum

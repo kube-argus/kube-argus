@@ -1,0 +1,38 @@
+# RBAC for the broker. It manages UserAuthenticationBind CRs and mints
+# ServiceAccount tokens, all within the bind namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kargus-broker
+  namespace: kargus-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kargus-broker
+  namespace: kargus-system
+rules:
+  - apiGroups: ["kargus.io"]
+    resources: ["userauthenticationbinds"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["kargus.io"]
+    resources: ["userauthenticationbinds/status"]
+    verbs: ["get"]
+  # Mint short-lived tokens for the per-user ServiceAccounts the operator creates.
+  - apiGroups: [""]
+    resources: ["serviceaccounts/token"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kargus-broker
+  namespace: kargus-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kargus-broker
+subjects:
+  - kind: ServiceAccount
+    name: kargus-broker
+    namespace: kargus-system

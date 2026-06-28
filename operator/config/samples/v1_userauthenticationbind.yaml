@@ -1,0 +1,15 @@
+apiVersion: kargus.io/v1
+kind: UserAuthenticationBind
+metadata:
+  labels:
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/managed-by: kustomize
+  name: userauthenticationbind-sample
+spec:
+  ttl: 12h
+  domain: golinux.network
+  user: lucas
+  memberships:
+    - gid: group/g12312312
+      name: engineering
+      domain: golinux.network

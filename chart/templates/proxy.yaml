@@ -1,0 +1,166 @@
+{{- if .Values.proxy.enabled }}
+{{- if and .Values.proxy.tls.enabled .Values.proxy.tls.generate }}
+{{- $name := include "kargus.proxy.tlsSecret" . }}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $name }}
+{{- $tlsCrt := "" }}{{- $tlsKey := "" }}{{- $caCrt := "" }}
+{{- if and $existing $existing.data (index $existing.data "tls.crt") }}
+{{- /* preserve the existing cert across upgrades */}}
+{{- $tlsCrt = index $existing.data "tls.crt" }}
+{{- $tlsKey = index $existing.data "tls.key" }}
+{{- $caCrt = index $existing.data "ca.crt" }}
+{{- else }}
+{{- $svc := include "kargus.proxy.fullname" . }}
+{{- $cn := printf "%s.%s.svc" $svc .Release.Namespace }}
+{{- $alt := list $svc $cn (printf "%s.cluster.local" $cn) }}
+{{- $ca := genCA (printf "%s-ca" $svc) 3650 }}
+{{- $crt := genSignedCert $cn nil $alt 3650 $ca }}
+{{- $tlsCrt = b64enc $crt.Cert }}
+{{- $tlsKey = b64enc $crt.Key }}
+{{- $caCrt = b64enc $ca.Cert }}
+{{- end }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: proxy
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ $tlsCrt }}
+  tls.key: {{ $tlsKey }}
+  ca.crt: {{ $caCrt }}   # the CA the client (Headlamp) must trust
+---
+{{- end }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "kargus.proxy.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: proxy
+---
+# The proxy mints SA tokens for the per-user ServiceAccounts in the bind namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "kargus.proxy.fullname" . }}
+  namespace: {{ include "kargus.bindNamespace" . }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["serviceaccounts/token"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "kargus.proxy.fullname" . }}
+  namespace: {{ include "kargus.bindNamespace" . }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "kargus.proxy.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "kargus.proxy.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kargus.proxy.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: proxy
+spec:
+  replicas: {{ .Values.proxy.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "kargus.labels" . | nindent 8 }}
+        app.kubernetes.io/component: proxy
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "kargus.proxy.fullname" . }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: proxy
+          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
+          imagePullPolicy: {{ .Values.proxy.image.pullPolicy }}
+          # Explicit command works with both the dedicated proxy image and the
+          # combined broker image (both contain /proxy).
+          command: ["/proxy"]
+          ports:
+            - { name: https, containerPort: 8443 }
+          {{- $jwks := .Values.proxy.jwksURL | default (printf "http://%s.%s.svc:%v/jwks" (include "kargus.broker.fullname" .) .Release.Namespace .Values.broker.service.port) }}
+          env:
+            - { name: LISTEN_ADDR, value: ":8443" }
+            # ISSUER is the public broker URL — it is checked against the token's
+            # `iss` claim, so it MUST match broker.config.issuer (not the default).
+            - { name: ISSUER, value: {{ .Values.broker.config.issuer | quote }} }
+            - { name: JWKS_URL, value: {{ $jwks | quote }} }
+            - { name: CLIENT_ID, value: {{ .Values.proxy.clientID | quote }} }
+            - { name: BIND_NAMESPACE, value: {{ include "kargus.bindNamespace" . | quote }} }
+            - { name: USERNAME_CLAIM, value: {{ .Values.proxy.usernameClaim | quote }} }
+            - { name: TOKEN_EXPIRATION_SECONDS, value: {{ .Values.proxy.tokenExpirationSeconds | quote }} }
+            {{- if .Values.proxy.tls.enabled }}
+            - { name: TLS_CERT_FILE, value: /etc/tls/tls.crt }
+            - { name: TLS_KEY_FILE, value: /etc/tls/tls.key }
+            {{- end }}
+          {{- $scheme := ternary "HTTPS" "HTTP" .Values.proxy.tls.enabled }}
+          livenessProbe:
+            httpGet: { path: /healthz, port: https, scheme: {{ $scheme }} }
+          readinessProbe:
+            httpGet: { path: /healthz, port: https, scheme: {{ $scheme }} }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          resources:
+            {{- toYaml .Values.proxy.resources | nindent 12 }}
+          {{- if .Values.proxy.tls.enabled }}
+          volumeMounts:
+            - name: tls
+              mountPath: /etc/tls
+              readOnly: true
+          {{- end }}
+      {{- if .Values.proxy.tls.enabled }}
+      volumes:
+        - name: tls
+          secret:
+            {{- if .Values.proxy.tls.generate }}
+            secretName: {{ include "kargus.proxy.tlsSecret" . }}
+            {{- else }}
+            secretName: {{ required "proxy.tls.secretName is required when proxy.tls.enabled and not generate" .Values.proxy.tls.secretName }}
+            {{- end }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kargus.proxy.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+    app.kubernetes.io/component: proxy
+spec:
+  type: {{ .Values.proxy.service.type }}
+  selector:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - { name: https, port: {{ .Values.proxy.service.port }}, targetPort: https }
+{{- end }}
