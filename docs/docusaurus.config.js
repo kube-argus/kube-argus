@@ -5,7 +5,7 @@ const { themes } = require('prism-react-renderer');
 const config = {
   title: 'Kargus',
   tagline: "Drive Kubernetes RBAC from your identity provider's group membership",
-  favicon: 'img/favicon.ico',
+  favicon: 'img/kargus-mark.svg',
 
   url: 'https://kargus.io',
   baseUrl: '/',
@@ -45,6 +45,7 @@ const config = {
       },
       navbar: {
         title: 'Kargus',
+        logo: { alt: 'Kargus', src: 'img/kargus-mark.svg' },
         items: [
           { type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs' },
           {
