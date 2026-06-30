@@ -7,9 +7,9 @@ metadata:
   name: userauthenticationbind-sample
 spec:
   ttl: 12h
-  domain: golinux.network
-  user: lucas
+  domain: kargus.io
+  user: admin
   memberships:
     - gid: group/g12312312
       name: engineering
-      domain: golinux.network
+      domain: kargus.io

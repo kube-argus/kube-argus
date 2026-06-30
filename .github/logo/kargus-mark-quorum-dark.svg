@@ -1,0 +1,17 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kargus">
+  
+  <polygon points="60,8 105.03,34 105.03,86 60,112 14.97,86 14.97,34" fill="none" stroke="#5FCF94" stroke-width="3.2" stroke-linejoin="round"></polygon>
+  
+  <g>
+    <circle cx="60" cy="8" r="6.4" fill="#11201A" stroke="#5FCF94" stroke-width="2.4"></circle><circle cx="60" cy="8" r="2.5" fill="#5FCF94"></circle>
+    <circle cx="105.03" cy="34" r="6.4" fill="#11201A" stroke="#5FCF94" stroke-width="2.4"></circle><circle cx="105.03" cy="34" r="2.5" fill="#5FCF94"></circle>
+    <circle cx="105.03" cy="86" r="6.4" fill="#11201A" stroke="#5FCF94" stroke-width="2.4"></circle><circle cx="105.03" cy="86" r="2.5" fill="#5FCF94"></circle>
+    <circle cx="60" cy="112" r="6.4" fill="#11201A" stroke="#5FCF94" stroke-width="2.4"></circle><circle cx="60" cy="112" r="2.5" fill="#5FCF94"></circle>
+    <circle cx="14.97" cy="86" r="6.4" fill="#11201A" stroke="#5FCF94" stroke-width="2.4"></circle><circle cx="14.97" cy="86" r="2.5" fill="#5FCF94"></circle>
+    <circle cx="14.97" cy="34" r="6.4" fill="#11201A" stroke="#5FCF94" stroke-width="2.4"></circle><circle cx="14.97" cy="34" r="2.5" fill="#5FCF94"></circle>
+  </g>
+  
+  <path d="M34 60 Q60 40 86 60 Q60 80 34 60 Z" fill="none" stroke="#5FCF94" stroke-width="2.8"></path>
+  <circle cx="60" cy="60" r="11" fill="none" stroke="#5FCF94" stroke-width="2.8"></circle>
+  <circle cx="60" cy="60" r="4.4" fill="#5FCF94"></circle>
+</svg>

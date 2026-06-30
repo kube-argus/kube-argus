@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	gwoidciov1 "github.com/kube-argos/kargos/operator/api/v1"
+	gwoidciov1 "github.com/kube-argus/kube-argus/operator/api/v1"
 )
 
 var _ = Describe("UserAuthenticationBind Controller", func() {
@@ -56,8 +56,8 @@ var _ = Describe("UserAuthenticationBind Controller", func() {
 					},
 					Spec: gwoidciov1.UserAuthenticationBindSpec{
 						TTL:    "12h",
-						Domain: "golinux.network",
-						User:   "lucas",
+						Domain: "kargus.io",
+						User:   "admin",
 					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())

@@ -3,11 +3,11 @@ package oidc
 import "testing"
 
 func TestParseGroups(t *testing.T) {
-	got := ParseGroups([]any{"group/g1", "engineering", "", 42}, "golinux.network")
+	got := ParseGroups([]any{"group/g1", "engineering", "", 42}, "kargus.io")
 	if len(got) != 2 {
 		t.Fatalf("expected 2 groups (skip empty + non-string), got %d: %+v", len(got), got)
 	}
-	if got[0].Gid != "group/g1" || got[0].Domain != "golinux.network" {
+	if got[0].Gid != "group/g1" || got[0].Domain != "kargus.io" {
 		t.Fatalf("unexpected first group: %+v", got[0])
 	}
 	if ParseGroups("not-an-array", "d") != nil {

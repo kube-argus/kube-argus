@@ -9,6 +9,6 @@ keywords:
   - crd
   - oidc
   - idp
-home: https://github.com:kube-argus/kargus.git
+home: https://github.com:kube-argus/kube-argus.git
 sources:
-  - https://github.com:kube-argus/kargus.git
+  - https://github.com:kube-argus/kube-argus.git

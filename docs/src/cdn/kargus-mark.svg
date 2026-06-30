@@ -1,0 +1,8 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kargus">
+  
+  <polygon points="60,8 105.03,34 105.03,86 60,112 14.97,86 14.97,34" fill="none" stroke="#2F9E5F" stroke-width="3.4" stroke-linejoin="round"></polygon>
+  
+  <path d="M30 60 Q60 38 90 60 Q60 82 30 60 Z" fill="none" stroke="#2F9E5F" stroke-width="3"></path>
+  <circle cx="60" cy="60" r="12.5" fill="none" stroke="#2F9E5F" stroke-width="3"></circle>
+  <circle cx="60" cy="60" r="5" fill="#2F9E5F"></circle>
+</svg>

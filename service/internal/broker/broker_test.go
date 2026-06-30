@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kube-argos/kargos/service/internal/config"
-	"github.com/kube-argos/kargos/service/internal/model"
-	"github.com/kube-argos/kargos/service/internal/store"
+	"github.com/kube-argus/kube-argus/service/internal/config"
+	"github.com/kube-argus/kube-argus/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/store"
 )
 
 // --- fakes implementing the broker dependencies ---
@@ -54,7 +54,7 @@ func testBroker(provider Provider, binder Binder) (*Broker, store.Store) {
 		Issuer:               "https://broker.example",
 		ClientID:             "dashboard",
 		RedirectURIs:         []string{"https://client.example/oidc/callback"},
-		AllowedDomains:       []string{"golinux.network"},
+		AllowedDomains:       []string{"kargus.io"},
 		TokenLifetime:        time.Hour,
 		RefreshTokenLifetime: time.Hour,
 	}
@@ -107,8 +107,8 @@ func queryOf(t *testing.T, location string) url.Values {
 
 // TestFullFlow drives authorize -> callback -> token end to end with fakes.
 func TestFullFlow(t *testing.T) {
-	provider := &fakeProvider{id: model.Identity{Email: "lucas@golinux.network", EmailVerified: true, Domain: "golinux.network"}}
-	b, st := testBroker(provider, fakeBinder{name: "lucas"})
+	provider := &fakeProvider{id: model.Identity{Email: "admin@kargus.io", EmailVerified: true, Domain: "kargus.io"}}
+	b, st := testBroker(provider, fakeBinder{name: "admin"})
 	verifier, challenge := pkcePair()
 
 	// 1. /authorize
@@ -223,9 +223,9 @@ func TestToken_BadPKCE(t *testing.T) {
 }
 
 func TestRefreshGrant_RotatesAndRebinds(t *testing.T) {
-	b, st := testBroker(&fakeProvider{}, fakeBinder{name: "lucas"})
+	b, st := testBroker(&fakeProvider{}, fakeBinder{name: "admin"})
 	_ = st.SaveRefresh(context.Background(), "rt1", store.RefreshGrant{
-		ClientID: "dashboard", Email: "lucas@golinux.network", Domain: "golinux.network",
+		ClientID: "dashboard", Email: "admin@kargus.io", Domain: "kargus.io",
 		EmailVerified: true, Groups: []store.GroupRef{{Gid: "g/eng"}},
 	}, time.Hour)
 

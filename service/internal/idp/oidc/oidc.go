@@ -10,8 +10,8 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 
-	"github.com/kube-argos/kargos/service/internal/config"
-	"github.com/kube-argos/kargos/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/config"
+	"github.com/kube-argus/kube-argus/service/internal/model"
 )
 
 // Provider implements idp.Provider over a generic OIDC issuer.

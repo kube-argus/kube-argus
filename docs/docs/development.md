@@ -1,7 +1,7 @@
 ---
 id: development
 title: Development
-sidebar_position: 8
+sidebar_position: 10
 ---
 
 # Development
@@ -10,15 +10,15 @@ The repository is two Go modules plus a Helm chart:
 
 | Module / path | Go module path |
 | --- | --- |
-| `operator/` | `git./kargos/operator` |
-| `service/` | `git./kargos/service` (replaces operator locally) |
+| `operator/` | `github.com/kube-argus/kube-argus/operator` |
+| `service/` | `github.com/kube-argus/kube-argus/service` (replaces operator locally) |
 | `chart/` | Helm chart (no Go) |
 
 A root `go.work` ties both modules together. The repo root is not itself a
 module, so build by module path from the root:
 
 ```bash
-go build git./kargos/operator/... git./kargos/service/...
+go build github.com/kube-argus/kube-argus/operator/... github.com/kube-argus/kube-argus/service/...
 ```
 
 Or `cd` into a module and use `./...` as usual. The `replace` in `service/go.mod`

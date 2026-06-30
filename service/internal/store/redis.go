@@ -9,7 +9,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/kube-argos/kargos/service/internal/config"
+	"github.com/kube-argus/kube-argus/service/internal/config"
 )
 
 // redisStore is the HA backend: TTL via SET EX, one-shot reads via GETDEL.

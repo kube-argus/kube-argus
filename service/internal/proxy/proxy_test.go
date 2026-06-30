@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kube-argos/kargos/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/model"
 )
 
 type minterFunc func(ctx context.Context, sa string) (model.Token, error)
@@ -20,10 +20,10 @@ func TestTokenCache_ReusesUntilTTL(t *testing.T) {
 	})
 
 	c := newTokenCache(time.Hour)
-	if _, err := c.token(context.Background(), "lucas", m); err != nil {
+	if _, err := c.token(context.Background(), "admin", m); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := c.token(context.Background(), "lucas", m); err != nil {
+	if _, err := c.token(context.Background(), "admin", m); err != nil {
 		t.Fatal(err)
 	}
 	if calls != 1 {
@@ -43,8 +43,8 @@ func TestTokenCache_RemintsAfterExpiry(t *testing.T) {
 		return model.Token{AccessToken: "tok"}, nil
 	})
 	c := newTokenCache(-time.Second) // already expired
-	_, _ = c.token(context.Background(), "lucas", m)
-	_, _ = c.token(context.Background(), "lucas", m)
+	_, _ = c.token(context.Background(), "admin", m)
+	_, _ = c.token(context.Background(), "admin", m)
 	if calls != 2 {
 		t.Fatalf("expected re-mint on expiry, got %d calls", calls)
 	}

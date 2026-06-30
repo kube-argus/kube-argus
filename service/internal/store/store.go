@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/kube-argos/kargos/service/internal/config"
+	"github.com/kube-argus/kube-argus/service/internal/config"
 )
 
 // ErrNotFound is returned when a key is absent or expired.

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kube-argos/kargos/service/internal/broker"
+	"github.com/kube-argus/kube-argus/service/internal/broker"
 )
 
 // New builds the broker HTTP server. Routing uses the stdlib ServeMux

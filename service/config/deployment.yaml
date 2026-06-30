@@ -20,7 +20,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: broker
-          image: ghcr.io/lucasgolino/kargus-broker:latest
+          image: ghcr.io/kube-argus/kargus-broker:latest
           ports:
             - { name: http, containerPort: 8080 }
           envFrom:
@@ -57,8 +57,8 @@ data:
   IDP_REDIRECT_URL: "https://broker.example.com/callback"
   IDP_SCOPES: "openid,email,profile,groups"
   IDP_GROUPS_CLAIM: "groups" # generic OIDC: claim holding group ids
-  # GOOGLE_DELEGATED_ADMIN: "admin@golinux.network"  # required when IDP_TYPE=google
-  ALLOWED_DOMAINS: "golinux.network"
+  # GOOGLE_DELEGATED_ADMIN: "admin@kargus.io"  # required when IDP_TYPE=google
+  ALLOWED_DOMAINS: "kargus.io"
   CLIENT_ID: "dashboard"
   REDIRECT_URIS: "https://client.example.com/oidc/callback"
   BIND_NAMESPACE: "kargus-system"

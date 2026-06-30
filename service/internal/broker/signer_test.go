@@ -19,7 +19,7 @@ func TestSigner_SignAndVerify(t *testing.T) {
 
 	tok, err := s.signIDToken(idClaims{
 		Sub: "user-1", Aud: "dashboard", Nonce: "n",
-		Email: "lucas@golino.space", EmailVerified: true, Groups: []string{"g/eng"},
+		Email: "admin@kargus.io", EmailVerified: true, Groups: []string{"g/eng"},
 	}, time.Hour)
 	if err != nil {
 		t.Fatal(err)

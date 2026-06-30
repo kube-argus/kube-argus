@@ -6,10 +6,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kube-argos/kargos/service/internal/config"
-	"github.com/kube-argos/kargos/service/internal/idp/google"
-	"github.com/kube-argos/kargos/service/internal/idp/oidc"
-	"github.com/kube-argos/kargos/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/config"
+	"github.com/kube-argus/kube-argus/service/internal/idp/google"
+	"github.com/kube-argus/kube-argus/service/internal/idp/oidc"
+	"github.com/kube-argus/kube-argus/service/internal/model"
 )
 
 // Provider is an external IdP capable of OIDC login and group resolution.

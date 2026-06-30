@@ -3,15 +3,15 @@ const { themes } = require('prism-react-renderer');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Kargos',
+  title: 'Kargus',
   tagline: "Drive Kubernetes RBAC from your identity provider's group membership",
   favicon: 'img/favicon.ico',
 
-  url: 'https://lucasgolino.github.io',
-  baseUrl: '/kargos/',
+  url: 'https://kargus.io',
+  baseUrl: '/',
 
-  organizationName: 'lucasgolino',
-  projectName: 'kargos',
+  organizationName: 'kube-argus',
+  projectName: 'kargus',
   onBrokenLinks: 'throw',
 
   i18n: { defaultLocale: 'en', locales: ['en'] },
@@ -25,10 +25,10 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          routeBasePath: '/', // docs-only mode
+          routeBasePath: '/docs',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl:
-            'https://git./kargos/tree/main/docs/',
+            'https://github.com/kube-argus/kube-argus/tree/main/docs/',
         },
         blog: false,
         theme: { customCss: require.resolve('./src/css/custom.css') },
@@ -39,12 +39,16 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      colorMode: {
+        defaultMode: 'dark',
+        respectPrefersColorScheme: false,
+      },
       navbar: {
-        title: 'Kargos',
+        title: 'Kargus',
         items: [
           { type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs' },
           {
-            href: 'https://git./kargos',
+            href: 'https://github.com/kube-argus/kube-argus',
             label: 'Source',
             position: 'right',
           },
@@ -52,7 +56,7 @@ const config = {
       },
       footer: {
         style: 'dark',
-        copyright: `Copyright © ${new Date().getFullYear()} kargos.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Kargus.`,
       },
       prism: {
         theme: themes.github,

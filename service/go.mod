@@ -1,9 +1,9 @@
-module github.com/kube-argos/kargos/service
+module github.com/kube-argus/kube-argus/service
 
 go 1.26.0
 
 require (
-	github.com/kube-argos/kargos/operator v0.0.0
+	github.com/kube-argus/kube-argus/operator v0.0.0
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/redis/go-redis/v9 v9.7.0
@@ -72,4 +72,4 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
-replace github.com/kube-argos/kargos/operator => ../operator
+replace github.com/kube-argus/kube-argus/operator => ../operator

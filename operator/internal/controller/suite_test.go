@@ -33,7 +33,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	gwoidciov1 "github.com/kube-argos/kargos/operator/api/v1"
+	gwoidciov1 "github.com/kube-argus/kube-argus/operator/api/v1"
 	// +kubebuilder:scaffold:imports
 )
 

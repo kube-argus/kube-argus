@@ -19,8 +19,8 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 
-	"github.com/kube-argos/kargos/service/internal/k8s"
-	"github.com/kube-argos/kargos/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/k8s"
+	"github.com/kube-argus/kube-argus/service/internal/model"
 )
 
 // Verifier verifies a broker id_token.

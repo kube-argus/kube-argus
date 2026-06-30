@@ -1,7 +1,7 @@
 ---
 id: proxy
 title: Cluster Auth Proxy
-sidebar_position: 8
+sidebar_position: 7
 ---
 
 # Cluster Auth Proxy (`kargus-proxy`)
@@ -73,8 +73,7 @@ cert-manager or your own `kubernetes.io/tls` Secret instead.
 
 ## Pointing Headlamp at the proxy
 
-Three changes in the Headlamp values (full example in
-`assets/headlamp-values.yaml`):
+Three changes in the Headlamp values:
 
 1. **Repoint the apiserver** at the proxy Service:
    ```yaml

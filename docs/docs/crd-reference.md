@@ -20,7 +20,7 @@ metadata:
 spec:
   ttl: 12h
   domain: 
-  user: lucas
+  user: admin
   memberships:
     - gid: group/g12312312
       name: engineering

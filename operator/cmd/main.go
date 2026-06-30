@@ -35,8 +35,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	gwoidciov1 "github.com/kube-argos/kargos/operator/api/v1"
-	"github.com/kube-argos/kargos/operator/internal/controller"
+	gwoidciov1 "github.com/kube-argus/kube-argus/operator/api/v1"
+	"github.com/kube-argus/kube-argus/operator/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
 

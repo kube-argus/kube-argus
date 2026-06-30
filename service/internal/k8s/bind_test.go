@@ -11,13 +11,13 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	gwoidciov1 "github.com/kube-argos/kargos/operator/api/v1"
-	"github.com/kube-argos/kargos/service/internal/model"
+	gwoidciov1 "github.com/kube-argus/kube-argus/operator/api/v1"
+	"github.com/kube-argus/kube-argus/service/internal/model"
 )
 
 func TestSanitizeName(t *testing.T) {
 	cases := map[string]string{
-		"lucas@golinux.network": "lucas-golinux-network",
+		"admin@kargus.io": "admin-kargus-io",
 		"a.b+c@x.io":            "a-b-c-x-io",
 		"@@@":                   "user",
 	}
@@ -41,9 +41,9 @@ func TestBinder_UpsertCreatesCR(t *testing.T) {
 	b := NewBinder(c, "ns", "12h", time.Second)
 
 	id := model.Identity{
-		Email:  "lucas@golinux.network",
-		Domain: "golinux.network",
-		Groups: []model.Membership{{Gid: "group/g1", Name: "eng", Domain: "golinux.network"}},
+		Email:  "admin@kargus.io",
+		Domain: "kargus.io",
+		Groups: []model.Membership{{Gid: "group/g1", Name: "eng", Domain: "kargus.io"}},
 	}
 	name, err := b.Upsert(context.Background(), id)
 	if err != nil {
@@ -54,14 +54,14 @@ func TestBinder_UpsertCreatesCR(t *testing.T) {
 	if err := c.Get(context.Background(), types.NamespacedName{Name: name, Namespace: "ns"}, &cr); err != nil {
 		t.Fatalf("CR not created: %v", err)
 	}
-	if cr.Spec.User != name || cr.Spec.Domain != "golinux.network" || len(cr.Spec.Memberships) != 1 {
+	if cr.Spec.User != name || cr.Spec.Domain != "kargus.io" || len(cr.Spec.Memberships) != 1 {
 		t.Fatalf("unexpected spec: %+v", cr.Spec)
 	}
 }
 
 func TestBinder_WaitBindedReturnsOnBinded(t *testing.T) {
 	cr := &gwoidciov1.UserAuthenticationBind{
-		ObjectMeta: metav1.ObjectMeta{Name: "lucas", Namespace: "ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: "admin", Namespace: "ns"},
 		Status:     gwoidciov1.UserAuthenticationBindStatus{Sv: gwoidciov1.ServiceBind{Status: gwoidciov1.BindBinded}},
 	}
 	c := fake.NewClientBuilder().WithScheme(scheme(t)).
@@ -69,14 +69,14 @@ func TestBinder_WaitBindedReturnsOnBinded(t *testing.T) {
 		WithObjects(cr).Build()
 	b := NewBinder(c, "ns", "12h", time.Second)
 
-	if err := b.WaitBinded(context.Background(), "lucas"); err != nil {
+	if err := b.WaitBinded(context.Background(), "admin"); err != nil {
 		t.Fatalf("expected nil (binded), got %v", err)
 	}
 }
 
 func TestBinder_WaitBindedFailsOnFailed(t *testing.T) {
 	cr := &gwoidciov1.UserAuthenticationBind{
-		ObjectMeta: metav1.ObjectMeta{Name: "lucas", Namespace: "ns"},
+		ObjectMeta: metav1.ObjectMeta{Name: "admin", Namespace: "ns"},
 		Status:     gwoidciov1.UserAuthenticationBindStatus{Sv: gwoidciov1.ServiceBind{Status: gwoidciov1.BindFailed}},
 	}
 	c := fake.NewClientBuilder().WithScheme(scheme(t)).
@@ -84,7 +84,7 @@ func TestBinder_WaitBindedFailsOnFailed(t *testing.T) {
 		WithObjects(cr).Build()
 	b := NewBinder(c, "ns", "12h", time.Second)
 
-	if err := b.WaitBinded(context.Background(), "lucas"); err == nil {
+	if err := b.WaitBinded(context.Background(), "admin"); err == nil {
 		t.Fatal("expected error on failed phase")
 	}
 }

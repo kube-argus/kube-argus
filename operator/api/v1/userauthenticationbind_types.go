@@ -55,7 +55,7 @@ type UserAuthenticationBindSpec struct {
 	// +kubebuilder:validation:MinLength=1
 	Domain string `json:"domain"`
 
-	// user is the user being bound (e.g. "lucas").
+	// user is the user being bound (e.g. "admin").
 	// +required
 	// +kubebuilder:validation:MinLength=1
 	User string `json:"user"`

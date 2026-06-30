@@ -1,7 +1,7 @@
 ---
 id: installation
 title: Installation
-sidebar_position: 5
+sidebar_position: 8
 ---
 
 # Installation
@@ -47,8 +47,8 @@ helm upgrade kargus ./chart -n kargus-system --reuse-values \
 
 The proxy self-signs its TLS by default. Then configure the client to send the
 broker id_token to the proxy and trust its CA — see the
-[Cluster auth proxy](./proxy.md) page and the Headlamp example in
-`assets/headlamp-values.yaml`.
+[Pointing Headlamp at the proxy](./proxy.md#pointing-headlamp-at-the-proxy)
+example.
 
 ## Try it
 
@@ -69,7 +69,7 @@ broker id_token to the proxy and trust its CA — see the
    ```bash
    kubectl get userauthenticationbind -n kargus-system
    # NAME   USER    DOMAIN            PHASE    EXPIRES   AGE
-   # ...    lucas      binded   12h       5s
+   # ...    admin      binded   12h       5s
    ```
 
 4. Confirm the binding exists:

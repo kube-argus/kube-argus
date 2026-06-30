@@ -8,7 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/kube-argos/kargos/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/model"
 )
 
 // Minter mints short-lived ServiceAccount tokens via the TokenRequest API.

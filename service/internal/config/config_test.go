@@ -3,8 +3,8 @@ package config
 import "testing"
 
 func TestAllowedDomain(t *testing.T) {
-	c := &Config{AllowedDomains: []string{"golinux.network"}}
-	if !c.AllowedDomain("GoLinux.Network") {
+	c := &Config{AllowedDomains: []string{"kargus.io"}}
+	if !c.AllowedDomain("Kargus.IO") {
 		t.Fatal("expected case-insensitive match")
 	}
 	if c.AllowedDomain("evil.com") {

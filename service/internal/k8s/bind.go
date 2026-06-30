@@ -13,8 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	gwoidciov1 "github.com/kube-argos/kargos/operator/api/v1"
-	"github.com/kube-argos/kargos/service/internal/model"
+	gwoidciov1 "github.com/kube-argus/kube-argus/operator/api/v1"
+	"github.com/kube-argus/kube-argus/service/internal/model"
 )
 
 // renewedAtAnnotation is stamped on each login; the operator anchors the bind

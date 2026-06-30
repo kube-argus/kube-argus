@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	gwoidciov1 "github.com/kube-argos/kargos/operator/api/v1"
+	gwoidciov1 "github.com/kube-argus/kube-argus/operator/api/v1"
 )
 
 // These tests use the controller-runtime fake client: pure in-memory unit tests
@@ -80,7 +80,7 @@ func bindFixture(memberships ...string) *gwoidciov1.UserAuthenticationBind {
 			CreationTimestamp: metav1.Now(),
 		},
 		Spec: gwoidciov1.UserAuthenticationBindSpec{
-			TTL: "12h", Domain: "golinux.network", User: "lucas", Memberships: ms,
+			TTL: "12h", Domain: "kargus.io", User: "admin", Memberships: ms,
 		},
 		Status: gwoidciov1.UserAuthenticationBindStatus{
 			Sv: gwoidciov1.ServiceBind{Status: gwoidciov1.BindPending},
@@ -127,7 +127,7 @@ func role(name, ns, group string) *rbacv1.Role {
 func TestReconcile_AddsFinalizer(t *testing.T) {
 	cr := &gwoidciov1.UserAuthenticationBind{
 		ObjectMeta: metav1.ObjectMeta{Name: "bind", Namespace: crNS, UID: crUID, CreationTimestamp: metav1.Now()},
-		Spec:       gwoidciov1.UserAuthenticationBindSpec{TTL: "12h", Domain: "d", User: "lucas"},
+		Spec:       gwoidciov1.UserAuthenticationBindSpec{TTL: "12h", Domain: "d", User: "admin"},
 	}
 	r, c := newReconciler(t, cr)
 
@@ -142,7 +142,7 @@ func TestReconcile_PendingThenBinds(t *testing.T) {
 	// Plain CR (no pre-seeded status) drives the full create path over reconciles.
 	cr := &gwoidciov1.UserAuthenticationBind{
 		ObjectMeta: metav1.ObjectMeta{Name: "bind", Namespace: crNS, UID: crUID, CreationTimestamp: metav1.Now()},
-		Spec:       gwoidciov1.UserAuthenticationBindSpec{TTL: "12h", Domain: "d", User: "lucas"},
+		Spec:       gwoidciov1.UserAuthenticationBindSpec{TTL: "12h", Domain: "d", User: "admin"},
 	}
 	r, c := newReconciler(t, cr, clusterRole("admin", ""))
 
@@ -175,8 +175,8 @@ func TestReconcile_FullBind(t *testing.T) {
 
 	// ServiceAccount created in CR namespace.
 	var sa corev1.ServiceAccount
-	if err := c.Get(context.Background(), types.NamespacedName{Name: "lucas", Namespace: crNS}, &sa); err != nil {
-		t.Fatalf("expected ServiceAccount lucas: %v", err)
+	if err := c.Get(context.Background(), types.NamespacedName{Name: "admin", Namespace: crNS}, &sa); err != nil {
+		t.Fatalf("expected ServiceAccount admin: %v", err)
 	}
 
 	// Exactly one ClusterRoleBinding, for the matching role.
@@ -191,7 +191,7 @@ func TestReconcile_FullBind(t *testing.T) {
 	if crb.RoleRef.Name != "editor" || crb.RoleRef.Kind != "ClusterRole" {
 		t.Fatalf("roleRef = %+v", crb.RoleRef)
 	}
-	if len(crb.Subjects) != 1 || crb.Subjects[0].Name != "lucas" || crb.Subjects[0].Kind != "ServiceAccount" {
+	if len(crb.Subjects) != 1 || crb.Subjects[0].Name != "admin" || crb.Subjects[0].Kind != "ServiceAccount" {
 		t.Fatalf("subjects = %+v", crb.Subjects)
 	}
 

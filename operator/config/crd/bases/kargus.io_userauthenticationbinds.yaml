@@ -93,7 +93,7 @@ spec:
                 pattern: ^[0-9]+(ns|us|µs|ms|s|m|h)$
                 type: string
               user:
-                description: user is the user being bound (e.g. "lucas").
+                description: user is the user being bound (e.g. "admin").
                 minLength: 1
                 type: string
             required:

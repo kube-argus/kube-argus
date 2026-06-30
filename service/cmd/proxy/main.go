@@ -20,8 +20,8 @@ import (
 	"k8s.io/client-go/rest"
 	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	"github.com/kube-argos/kargos/service/internal/k8s"
-	"github.com/kube-argos/kargos/service/internal/proxy"
+	"github.com/kube-argus/kube-argus/service/internal/k8s"
+	"github.com/kube-argus/kube-argus/service/internal/proxy"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/kube-argos/kargos/operator
+module github.com/kube-argus/kube-argus/operator
 
 go 1.26.0
 

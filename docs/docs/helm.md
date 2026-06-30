@@ -1,7 +1,7 @@
 ---
 id: helm
 title: Helm Chart
-sidebar_position: 6
+sidebar_position: 9
 ---
 
 # Helm Chart
@@ -32,7 +32,7 @@ helm install kargus ./chart -n kargus-system --create-namespace
 | `operator.enabled` | `true` | install the controller |
 | `operator.replicas` | `1` | |
 | `operator.leaderElect` | `true` | adds lease/event RBAC |
-| `operator.image.repository` | `ghcr.io/lucasgolino/kargus-operator` | |
+| `operator.image.repository` | `ghcr.io/kube-argus/kargus-operator` | |
 | `operator.image.tag` | `latest` | |
 
 ### Broker
@@ -41,7 +41,7 @@ helm install kargus ./chart -n kargus-system --create-namespace
 | --- | --- | --- |
 | `broker.enabled` | `true` | install the OIDC broker |
 | `broker.replicas` | `1` | scale up only with Redis (see HA) |
-| `broker.image.repository` | `git.kargus.io/kargusr` | |
+| `broker.image.repository` | `ghcr.io/kube-argus/kargus-broker` | |
 | `broker.service.type` / `broker.service.port` | `ClusterIP` / `80` | |
 | `broker.tls.enabled` | `false` | serve HTTPS from the broker (terminate TLS in-process) |
 | `broker.tls.secretName` | `""` | `kubernetes.io/tls` Secret (`tls.crt`+`tls.key`); required when enabled. With this on, point the ingress at the backend over HTTPS (e.g. nginx `backend-protocol: HTTPS`) or use TLS passthrough |
@@ -77,7 +77,7 @@ Separate component; see [Cluster Auth Proxy](./proxy.md).
 | Key | Default | Notes |
 | --- | --- | --- |
 | `proxy.enabled` | `false` | the apiserver auth proxy (no apiserver OIDC needed) |
-| `proxy.image.repository` | `ghcr.io/lucasgolino/kargus-proxy` | proxy image (`make build BUNDLE=proxy`) |
+| `proxy.image.repository` | `ghcr.io/kube-argus/kargus-proxy` | proxy image (`make build BUNDLE=proxy`) |
 | `proxy.image.tag` | `latest` | |
 | `proxy.clientID` | `headlamp` | expected `aud` of the broker id_token |
 | `proxy.usernameClaim` | `email` | claim mapped to the SA name |

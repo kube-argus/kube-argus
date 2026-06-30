@@ -7,7 +7,7 @@ domain: kargus.io
 layout:
 - go.kubebuilder.io/v4
 projectName: kargus
-repo: github.com/kube-argos/kargos/operator
+repo: github.com/kube-argus/kube-argus/operator
 resources:
 - api:
     crdVersion: v1
@@ -15,6 +15,6 @@ resources:
   controller: true
   domain: kargus.io
   kind: UserAuthenticationBind
-  path: github.com/kube-argos/kargos/operator/api/v1
+  path: github.com/kube-argus/kube-argus/operator/api/v1
   version: v1
 version: "3"

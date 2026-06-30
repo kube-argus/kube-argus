@@ -6,7 +6,7 @@ operator:
   replicas: 1
   leaderElect: true
   image:
-    repository: ghcr.io/lucasgolino/kargus-operator
+    repository: ghcr.io/kube-argus/kargus-operator
     tag: latest
     pullPolicy: IfNotPresent
   resources:
@@ -17,7 +17,7 @@ broker:
   enabled: true
   replicas: 1
   image:
-    repository: ghcr.io/lucasgolino/kargus-broker
+    repository: ghcr.io/kube-argus/kargus-broker
     tag: latest
     pullPolicy: IfNotPresent
   service:
@@ -61,7 +61,7 @@ broker:
     idpGroupsClaim: "groups" # generic OIDC: claim holding group ids
     googleDelegatedAdmin: "" # required when idpType=google
     googleCredentialsFile: "" # optional service-account JSON path
-    allowedDomains: "golinux.network"
+    allowedDomains: "kargus.io"
     clientID: "dashboard"
     redirectURIs: "https://client.example.com/oidc/callback"
     bindNamespace: "" # defaults to the release namespace
@@ -101,7 +101,7 @@ proxy:
   enabled: false
   replicas: 1
   image:
-    repository: ghcr.io/lucasgolino/kargus-proxy
+    repository: ghcr.io/kube-argus/kargus-proxy
     tag: latest
     pullPolicy: IfNotPresent
   clientID: "headlamp" # expected audience of the broker id_token

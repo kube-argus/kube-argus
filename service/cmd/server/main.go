@@ -17,13 +17,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 
-	gwoidciov1 "github.com/kube-argos/kargos/operator/api/v1"
-	"github.com/kube-argos/kargos/service/internal/broker"
-	"github.com/kube-argos/kargos/service/internal/config"
-	"github.com/kube-argos/kargos/service/internal/idp"
-	"github.com/kube-argos/kargos/service/internal/k8s"
-	"github.com/kube-argos/kargos/service/internal/server"
-	"github.com/kube-argos/kargos/service/internal/store"
+	gwoidciov1 "github.com/kube-argus/kube-argus/operator/api/v1"
+	"github.com/kube-argus/kube-argus/service/internal/broker"
+	"github.com/kube-argus/kube-argus/service/internal/config"
+	"github.com/kube-argus/kube-argus/service/internal/idp"
+	"github.com/kube-argus/kube-argus/service/internal/k8s"
+	"github.com/kube-argus/kube-argus/service/internal/server"
+	"github.com/kube-argus/kube-argus/service/internal/store"
 )
 
 const waitBindedTimeout = 15 * time.Second

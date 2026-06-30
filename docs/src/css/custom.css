@@ -1,14 +1,53 @@
+/* Kargus theme — logo green on near-black, Oxide-inspired (mono labels, sharp edges, grid borders) */
+
 :root {
-  --ifm-color-primary: #1a73e8;
-  --ifm-color-primary-dark: #1765cc;
-  --ifm-color-primary-darker: #155fc0;
-  --ifm-color-primary-darkest: #114e9e;
-  --ifm-color-primary-light: #3284ea;
-  --ifm-color-primary-lighter: #408bec;
-  --ifm-color-primary-lightest: #69a4f0;
-  --ifm-code-font-size: 95%;
+  --ifm-color-primary: #1f7d49;
+  --ifm-color-primary-dark: #1c7142;
+  --ifm-color-primary-darker: #1a6a3e;
+  --ifm-color-primary-darkest: #155833;
+  --ifm-color-primary-light: #248a50;
+  --ifm-color-primary-lighter: #269154;
+  --ifm-color-primary-lightest: #2f9e5f;
+
+  --ifm-code-font-size: 90%;
+  --ifm-font-family-monospace: ui-monospace, "SFMono-Regular", "SF Mono", Menlo,
+    Consolas, "Liberation Mono", monospace;
+  --ifm-global-radius: 2px;
+
+  --kargus-mono: var(--ifm-font-family-monospace);
 }
 
+/* Oxide is dark-first. Lock dark as default look. */
 [data-theme='dark'] {
-  --ifm-color-primary: #6ea8fe;
+  --ifm-color-primary: #5fcf94;
+  --ifm-color-primary-dark: #45c483;
+  --ifm-color-primary-darker: #38bf7a;
+  --ifm-color-primary-darkest: #2f9e5f;
+  --ifm-color-primary-light: #79d6a5;
+  --ifm-color-primary-lighter: #86dbae;
+  --ifm-color-primary-lightest: #aae6c8;
+
+  --ifm-background-color: #0c1611;
+  --ifm-background-surface-color: #11201a;
+  --ifm-navbar-background-color: #0c1611;
+  --ifm-footer-background-color: #0c1611;
+  --ifm-color-emphasis-200: #1d2f26;
+  --ifm-color-emphasis-300: #25392f;
+  --ifm-toc-border-color: #1d2f26;
+  --ifm-hr-border-color: #1d2f26;
+}
+
+/* sharp corners everywhere — Oxide signature */
+.button,
+.card,
+.navbar,
+.menu__link {
+  border-radius: var(--ifm-global-radius);
+}
+
+/* mono, slightly tracked nav labels */
+.navbar__title,
+.navbar__link {
+  font-family: var(--kargus-mono);
+  letter-spacing: 0.02em;
 }

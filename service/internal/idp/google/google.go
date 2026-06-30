@@ -13,8 +13,8 @@ import (
 	directory "google.golang.org/api/admin/directory/v1"
 	"google.golang.org/api/option"
 
-	"github.com/kube-argos/kargos/service/internal/config"
-	"github.com/kube-argos/kargos/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/config"
+	"github.com/kube-argus/kube-argus/service/internal/model"
 )
 
 // Provider implements idp.Provider for Google Workspace.

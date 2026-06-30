@@ -1,7 +1,7 @@
 ---
 id: broker
 title: Broker Service
-sidebar_position: 7
+sidebar_position: 5
 ---
 
 # Broker Service
@@ -180,4 +180,4 @@ make (build | push | release) REPOSITORY=ghcr.io/kube-argus/kargus VERSION=v0.2.
 | `internal/proxy` | the [cluster auth proxy](./proxy.md) (`cmd/proxy`) |
 
 The module reuses the operator's CR types via
-`replace git./kargos/operator => ../operator`.
+`replace github.com/kube-argus/kube-argus/operator => ../operator`.

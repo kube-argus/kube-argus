@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kube-argos/kargos/service/internal/model"
-	"github.com/kube-argos/kargos/service/internal/store"
+	"github.com/kube-argus/kube-argus/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/store"
 )
 
 const (

@@ -15,9 +15,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kube-argos/kargos/service/internal/config"
-	"github.com/kube-argos/kargos/service/internal/model"
-	"github.com/kube-argos/kargos/service/internal/store"
+	"github.com/kube-argus/kube-argus/service/internal/config"
+	"github.com/kube-argus/kube-argus/service/internal/model"
+	"github.com/kube-argus/kube-argus/service/internal/store"
 )
 
 // Provider is the upstream IdP: OIDC login plus group resolution.
