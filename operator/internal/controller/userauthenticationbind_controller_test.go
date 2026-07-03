@@ -35,6 +35,8 @@ var _ = Describe("UserAuthenticationBind Controller", func() {
 		const (
 			resourceName      = "test-resource"
 			resourceNamespace = "default"
+			defaultTTL        = "12h"
+			defaultUser       = "admin"
 		)
 
 		ctx := context.Background()
@@ -55,9 +57,9 @@ var _ = Describe("UserAuthenticationBind Controller", func() {
 						Namespace: resourceNamespace,
 					},
 					Spec: gwoidciov1.UserAuthenticationBindSpec{
-						TTL:    "12h",
+						TTL:    defaultTTL,
 						Domain: "kargus.io",
-						User:   "admin",
+						User:   defaultUser,
 					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
