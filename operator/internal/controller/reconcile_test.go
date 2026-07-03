@@ -29,9 +29,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	gwoidciov1 "github.com/kube-argus/kube-argus/operator/api/v1"
 )
@@ -164,7 +164,7 @@ func TestReconcile_PendingThenBinds(t *testing.T) {
 func TestReconcile_FullBind(t *testing.T) {
 	cr := bindFixture("group/g123")
 	r, c := newReconciler(t, cr,
-		clusterRole("editor", "group/g123"), // match -> ClusterRoleBinding
+		clusterRole("editor", "group/g123"),  // match -> ClusterRoleBinding
 		clusterRole("viewer", "group/other"), // no match
 		clusterRole("admin", ""),             // no annotation
 		role("dev", "team", "group/g123"),    // match -> RoleBinding in team
