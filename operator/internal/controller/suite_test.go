@@ -115,7 +115,11 @@ func getFirstFoundEnvTestBinaryDir() string {
 	basePath := filepath.Join(filepath.Dir(filePath), "..", "..", "bin", "k8s")
 	entries, err := os.ReadDir(basePath)
 	if err != nil {
-		logf.Log.Info("Envtest binaries directory not found", "path", basePath)
+		if os.IsNotExist(err) {
+			logf.Log.Info("Envtest binaries directory not found", "path", basePath)
+			return ""
+		}
+		logf.Log.Error(err, "Failed to read directory", "path", basePath)
 		return ""
 	}
 	for _, entry := range entries {

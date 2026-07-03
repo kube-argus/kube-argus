@@ -97,7 +97,7 @@ func (r *UserAuthenticationBindReconciler) Reconcile(ctx context.Context, req ct
 			metav1.ConditionUnknown, "Accepted", "Bind accepted, pending sync"); err != nil {
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{RequeueAfter: time.Nanosecond}, nil
+		return ctrl.Result{RequeueAfter: time.Second}, nil
 	}
 
 	ttl, err := time.ParseDuration(bind.Spec.TTL)
