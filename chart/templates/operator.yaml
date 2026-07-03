@@ -112,7 +112,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: manager
-          image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
+          image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
           command: ["/manager"]
           args:

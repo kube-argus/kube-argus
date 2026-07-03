@@ -84,17 +84,41 @@ contains both binaries; the proxy Deployment overrides `command: ["/proxy"]`.
 Build/push the three deployable bundles from the repo root:
 
 ```bash
-make build  BUNDLE=operator|service|proxy REPOSITORY=<registry/org> VERSION=<tag>
-make push   BUNDLE=...                     REPOSITORY=...            VERSION=...
-make release BUNDLE=...                    # build + push
-make release-all                           # all three bundles
-make image  BUNDLE=service                 # print the resolved image ref
+make build  BUNDLE=operator|broker|proxy REPOSITORY=<registry/org> VERSION=<tag>
+make push   BUNDLE=...                    REPOSITORY=...            VERSION=...
+make release BUNDLE=...                   # build + push (omit BUNDLE for all three)
+make image                                # print the resolved image ref(s)
 ```
 
-Image name is `<REPOSITORY>/<BUNDLE>:<VERSION>`. `service` and `proxy` come from
-the root `Dockerfile` (both binaries; `--build-arg BIN` selects the entrypoint);
-`operator` from `operator/Dockerfile`. Point the chart's `*.image.repository`
-values at the names you push.
+Image name is `<REPOSITORY>/kargus-<BUNDLE>:<VERSION>` — the same names the
+chart's `*.image.repository` values default to. All three images are `--target`
+stages in the single root `Dockerfile`; the `broker` image contains both the
+broker and proxy binaries (the proxy Deployment overrides `command: ["/proxy"]`).
+
+## Releases
+
+Pushing a tag `v*` runs `.github/workflows/release.yml`, which:
+
+1. builds the three images for `linux/amd64` + `linux/arm64` and pushes them to
+   `ghcr.io/kube-argus/kargus-{operator,broker,proxy}:<tag>`;
+2. signs each image digest with cosign (keyless, verifiable via the public
+   Rekor log) and attaches GitHub build-provenance attestations;
+3. generates an SPDX SBOM per image and attaches them to an auto-created
+   GitHub release;
+4. packages the Helm chart, pushes it to `oci://ghcr.io/kube-argus/charts`,
+   and cosign-signs it.
+
+The chart is published with whatever `version`/`appVersion` `chart/Chart.yaml`
+carries — bump both in the release PR **before** tagging, or the chart's
+default image tag will point at the previous release.
+
+Verify a released image:
+
+```bash
+cosign verify ghcr.io/kube-argus/kargus-broker:<tag> \
+  --certificate-identity-regexp 'github.com/kube-argus/kube-argus' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
 
 ## Helm chart
 

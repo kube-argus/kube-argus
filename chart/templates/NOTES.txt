@@ -15,3 +15,9 @@ Next:
 WARNING: SESSION_STORE=redis but no Redis address resolved. Set broker.redisAddr
 or redis.enabled=true.
 {{- end }}
+{{- if and .Values.networkPolicy.enabled .Values.broker.enabled (not .Values.networkPolicy.broker.extraEgress) }}
+
+WARNING: networkPolicy.enabled=true but networkPolicy.broker.extraEgress is
+empty — the broker cannot reach your IdP and logins WILL fail. Add an egress
+rule for your IdP (see values.yaml).
+{{- end }}

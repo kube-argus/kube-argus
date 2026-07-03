@@ -143,7 +143,8 @@ upsert + wait) and **rotates** the refresh token (the old one is single-use).
 
 This keeps OIDC clients (e.g. Headlamp) logged in past the access-token lifetime
 — without it, the client repeatedly fails to refresh once the token expires.
-Group membership is snapshotted at login; it re-resolves on the next full login.
+Group membership is snapshotted at login; it re-resolves on the next full login
+(see [Revocation window](#revocation-window--ttl-tuning) below).
 
 The refresh-token lifetime defaults to `BIND_TTL`, so the **session and the
 `UserAuthenticationBind` share one sliding window**: each refresh (and each
@@ -151,6 +152,34 @@ login) re-stamps the CR's `kargus.io/renewed-at` annotation, which the operator
 uses as the TTL anchor — renewing the bind. Stop refreshing and both expire
 together after `BIND_TTL`. Keep `TOKEN_LIFETIME_SECONDS` shorter than `BIND_TTL`
 so the client refreshes (and renews) within the window.
+
+### Revocation window & TTL tuning
+
+Refreshes never re-query the IdP: `grant_type=refresh_token` rebuilds the
+identity from the stored refresh grant (`handleRefresh` in
+`service/internal/broker/handlers.go`). A user removed from a group at the IdP
+therefore **keeps that group's access as long as they keep refreshing** — up to
+`BIND_TTL` (12h default), since the refresh-token lifetime defaults to it. This
+window is deliberate (a Directory-API or IdP call on every refresh would put the
+IdP on the hot path); the mitigation is choosing TTLs that match your revocation
+requirements:
+
+| Requirement | Setting |
+| --- | --- |
+| Revocation within N hours | `BIND_TTL=<N>h` — session, bind, and cached groups all expire together; the next login re-resolves groups |
+| Session shorter than the bind | `REFRESH_TOKEN_LIFETIME_SECONDS` below `BIND_TTL` — forces a fresh login (and group re-resolution) sooner without shrinking the bind |
+| Limit each minted credential | `TOKEN_LIFETIME_SECONDS` (default 900) — bounds any single SA token / id_token; keep it well under `BIND_TTL` |
+| Immediate revocation of one user | `kubectl delete userauthenticationbind <user> -n kargus-system` — the operator tears down the SA and RBAC bindings; outstanding SA tokens die with the ServiceAccount |
+
+Example — a stricter profile with a 2h revocation bound and 5-minute tokens:
+
+```bash
+BIND_TTL=2h
+TOKEN_LIFETIME_SECONDS=300
+```
+
+Shorter TTLs mean more fresh logins for users and more IdP traffic; the 12h
+default trades that for a working day of session.
 
 ### High availability
 

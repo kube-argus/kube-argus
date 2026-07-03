@@ -13,6 +13,7 @@ const sidebars = {
     'installation',
     'helm',
     'development',
+    'hardening',
   ],
 };
 

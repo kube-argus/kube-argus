@@ -1,0 +1,199 @@
+{{- if .Values.networkPolicy.enabled }}
+<<<<<<< HEAD
+{{- $cidr := required "networkPolicy.apiServerCIDR is required when networkPolicy.enabled — kubectl get svc kubernetes -n default -o jsonpath='{.spec.clusterIP}' and append /32" .Values.networkPolicy.apiServerCIDR }}
+{{- $dns := list (dict "ports" (list (dict "port" 53 "protocol" "UDP") (dict "port" 53 "protocol" "TCP"))) }}
+{{- $apiserver := list (dict "to" (list (dict "ipBlock" (dict "cidr" $cidr))) "ports" (list (dict "port" 443) (dict "port" 6443))) }}
+=======
+>>>>>>> feat/hardening-phase1-2
+{{- if .Values.broker.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kargus.broker.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+<<<<<<< HEAD
+=======
+    app.kubernetes.io/component: broker
+>>>>>>> feat/hardening-phase1-2
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: broker
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+<<<<<<< HEAD
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{- toYaml .Values.networkPolicy.ingressNamespaceSelector | nindent 14 }}
+      ports:
+        - port: 8080
+    {{- if .Values.proxy.enabled }}
+    # proxy fetches the broker JWKS in-cluster
+=======
+    # Login traffic via the ingress controller only.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{- toYaml .Values.networkPolicy.ingressControllerNamespaceLabels | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 8080 }
+    {{- if .Values.proxy.enabled }}
+    # The proxy fetches the broker JWKS in-cluster.
+>>>>>>> feat/hardening-phase1-2
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: proxy
+              app.kubernetes.io/instance: {{ .Release.Name }}
+      ports:
+<<<<<<< HEAD
+        - port: 8080
+    {{- end }}
+  egress:
+    {{- toYaml (concat $dns $apiserver) | nindent 4 }}
+=======
+        - { protocol: TCP, port: 8080 }
+    {{- end }}
+  egress:
+    - ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    # IdP (HTTPS) + kube-apiserver (TokenRequest, CR writes). The IdP is an
+    # arbitrary external host and the apiserver endpoint varies per cluster,
+    # so this allows 443/6443 anywhere rather than pinning IPs.
+    - ports:
+        - { protocol: TCP, port: 443 }
+        - { protocol: TCP, port: 6443 }
+>>>>>>> feat/hardening-phase1-2
+    {{- if .Values.redis.enabled }}
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: redis
+              app.kubernetes.io/instance: {{ .Release.Name }}
+      ports:
+<<<<<<< HEAD
+        - port: 6379
+    {{- end }}
+    {{- with .Values.networkPolicy.broker.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+=======
+        - { protocol: TCP, port: 6379 }
+    {{- else if .Values.broker.redisAddr }}
+    # External Redis: the address is host:port, not pinnable here.
+    - ports:
+        - { protocol: TCP, port: 6379 }
+>>>>>>> feat/hardening-phase1-2
+    {{- end }}
+{{- end }}
+{{- if .Values.proxy.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kargus.proxy.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+<<<<<<< HEAD
+=======
+    app.kubernetes.io/component: proxy
+>>>>>>> feat/hardening-phase1-2
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+<<<<<<< HEAD
+    # in-cluster OIDC clients from any namespace, port-restricted
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - port: 8443
+  egress:
+    {{- toYaml (concat $dns $apiserver) | nindent 4 }}
+    {{- if .Values.broker.enabled }}
+=======
+    # In-cluster OIDC clients (e.g. Headlamp) use the proxy as their apiserver.
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - { protocol: TCP, port: 8443 }
+  egress:
+    - ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    # kube-apiserver (forwarded requests).
+    - ports:
+        - { protocol: TCP, port: 443 }
+        - { protocol: TCP, port: 6443 }
+    {{- if .Values.broker.enabled }}
+    # Broker JWKS.
+>>>>>>> feat/hardening-phase1-2
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: broker
+              app.kubernetes.io/instance: {{ .Release.Name }}
+      ports:
+<<<<<<< HEAD
+        - port: 8080
+    {{- end }}
+{{- end }}
+{{- if .Values.redis.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kargus.redis.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: redis
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: broker
+              app.kubernetes.io/instance: {{ .Release.Name }}
+      ports:
+        - port: 6379
+  egress: []
+{{- end }}
+{{- if .Values.operator.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "kargus.operator.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "kargus.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: operator
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes: [Ingress, Egress]
+  # no ingress: kubelet health probes bypass NetworkPolicy on mainstream CNIs
+  ingress: []
+  egress:
+    {{- toYaml (concat $dns $apiserver) | nindent 4 }}
+{{- end }}
+=======
+        - { protocol: TCP, port: 8080 }
+    {{- end }}
+{{- end }}
+>>>>>>> feat/hardening-phase1-2
+{{- end }}

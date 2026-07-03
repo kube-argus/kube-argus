@@ -94,6 +94,19 @@ Separate component; see [Cluster Auth Proxy](./proxy.md).
 | `redis.enabled` | `false` | dev-only single Redis (no auth/persistence) |
 | `redis.image` | `redis:7-alpine` | |
 
+### NetworkPolicy
+
+| Key | Default | Notes |
+| --- | --- | --- |
+| `networkPolicy.enabled` | `false` | requires a CNI that enforces NetworkPolicy |
+| `networkPolicy.ingressControllerNamespaceLabels` | `kubernetes.io/metadata.name: ingress-nginx` | namespace(s) allowed to reach the broker |
+
+When enabled: broker ingress is limited to the ingress-controller namespace
+(plus the proxy, which fetches the broker JWKS in-cluster); proxy ingress allows
+in-cluster clients; egress from both is limited to DNS, HTTPS (IdP +
+kube-apiserver, ports 443/6443), and Redis when configured. The broker holds
+IdP secrets and mints tokens — without a policy it is reachable from any pod.
+
 ## High availability
 
 The broker keeps auth-requests and one-shot codes in a store. To run more than

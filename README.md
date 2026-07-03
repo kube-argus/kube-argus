@@ -53,7 +53,7 @@ sequenceDiagram
 1. Cluster operators tag `Role`s / `ClusterRole`s they want to expose with the annotation `rbac.kargus.io/group: <group-id>`.
 2. A user authenticates via the broker → IdP (OIDC). The broker validates the identity (verified email, allowed domain) and resolves group memberships.
 3. The broker writes a `UserAuthenticationBind` CR with those memberships and waits for `status.sv.status == binded`.
-4. The operator reconciles the CR: creates a per-user `ServiceAccount` and binds it (via `RoleBinding`/`ClusterRoleBinding`) to every annotated role whose group is in the user's memberships. Membership changes re-sync; binds expire after their TTL.
+4. The operator reconciles the CR: creates a per-user `ServiceAccount` and binds it (via `RoleBinding`/`ClusterRoleBinding`) to every annotated role whose group is in the user's memberships. Membership changes re-sync on the next fresh login — token refreshes reuse the groups cached at login, for up to `BIND_TTL` (12h default); binds expire after their TTL. See [Revocation window](https://kargus.io/docs/broker#revocation-window--ttl-tuning).
 5. The broker mints a short-lived SA token (`TokenRequest`) and returns it to the client, which uses it as a bearer credential against the kube-apiserver.
 
 ## Identity providers

@@ -98,7 +98,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: proxy
-          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
+          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.proxy.image.pullPolicy }}
           # Explicit command works with both the dedicated proxy image and the
           # combined broker image (both contain /proxy).
