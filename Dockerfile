@@ -1,9 +1,9 @@
-# One Dockerfile, three images via --target: operator | service | proxy.
+# One Dockerfile, three images via --target: operator | broker | proxy.
 # Build from the repository ROOT (service module replaces ../operator).
 #
-#   docker build --target operator -t <repo>/operator:tag .
-#   docker build --target service  -t <repo>/service:tag  .
-#   docker build --target proxy    -t <repo>/proxy:tag    .
+#   docker build --target operator -t <repo>/kargus-operator:tag .
+#   docker build --target broker   -t <repo>/kargus-broker:tag   .
+#   docker build --target proxy    -t <repo>/kargus-proxy:tag    .
 #
 # Per-module `go mod download` caches deps so source changes don't re-download.
 FROM golang:1.26 AS gobase
@@ -35,7 +35,7 @@ COPY --from=operator-build /out/manager /manager
 USER 65532:65532
 ENTRYPOINT ["/manager"]
 
-FROM gcr.io/distroless/static:nonroot AS service
+FROM gcr.io/distroless/static:nonroot AS broker
 COPY --from=service-build /out/broker /broker
 COPY --from=service-build /out/proxy /proxy
 USER 65532:65532

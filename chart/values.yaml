@@ -7,7 +7,7 @@ operator:
   leaderElect: true
   image:
     repository: ghcr.io/kube-argus/kargus-operator
-    tag: latest
+    tag: "" # defaults to the chart appVersion
     pullPolicy: IfNotPresent
   resources:
     limits: { cpu: 500m, memory: 128Mi }
@@ -18,7 +18,7 @@ broker:
   replicas: 1
   image:
     repository: ghcr.io/kube-argus/kargus-broker
-    tag: latest
+    tag: "" # defaults to the chart appVersion
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -102,7 +102,7 @@ proxy:
   replicas: 1
   image:
     repository: ghcr.io/kube-argus/kargus-proxy
-    tag: latest
+    tag: "" # defaults to the chart appVersion
     pullPolicy: IfNotPresent
   clientID: "headlamp" # expected audience of the broker id_token
   usernameClaim: "email" # claim mapped to the ServiceAccount name
@@ -132,3 +132,27 @@ proxy:
 redis:
   enabled: false
   image: redis:7-alpine
+
+# Deny-by-default NetworkPolicies for every enabled component. Requires a CNI
+# that enforces NetworkPolicy including egress (Calico, Cilium, ...); silently
+# a no-op otherwise.
+networkPolicy:
+  enabled: false
+  # The apiserver isn't label-selectable, so its address must be supplied.
+  # Required when enabled. Find it with:
+  #   kubectl get svc kubernetes -n default -o jsonpath='{.spec.clusterIP}'
+  # and append /32 (or use your control-plane CIDR).
+  apiServerCIDR: ""
+  # Namespaces allowed to reach the broker's HTTP port — point this at your
+  # ingress controller's namespace.
+  ingressNamespaceSelector:
+    kubernetes.io/metadata.name: ingress-nginx
+  broker:
+    # Extra egress rules (raw NetworkPolicy egress syntax) appended to the
+    # broker policy. The chart cannot know your IdP's addresses: WITHOUT a
+    # rule here, logins WILL fail. Same applies to an external Redis
+    # (broker.redisAddr outside this release). Example — allow any HTTPS:
+    #   extraEgress:
+    #     - to: [{ ipBlock: { cidr: 0.0.0.0/0 } }]
+    #       ports: [{ port: 443 }]
+    extraEgress: []

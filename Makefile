@@ -1,21 +1,21 @@
 # kargus — docker build/push for the deployable bundles.
 #
-#   make build  BUNDLE=operator|service|proxy  REPOSITORY=<registry/org>  VERSION=<tag>
-#   make push   BUNDLE=...                      REPOSITORY=...             VERSION=...
-#   make release BUNDLE=...                     (build + push)
+#   make build  BUNDLE=operator|broker|proxy  REPOSITORY=<registry/org>  VERSION=<tag>
+#   make push   BUNDLE=...                    REPOSITORY=...             VERSION=...
+#   make release BUNDLE=...                   (build + push)
 #
 # Omit BUNDLE to act on ALL bundles:
 #   make release REPOSITORY=... VERSION=v0.1.0     # builds + pushes all three
 #
-# Image name is <REPOSITORY>/<BUNDLE>:<VERSION>, e.g.
-#   github.com/kube-argus/kube-argus/service:v0.1.0
+# Image name is <REPOSITORY>/kargus-<BUNDLE>:<VERSION> (matches chart/values.yaml), e.g.
+#   ghcr.io/kube-argus/kargus-broker:v0.1.0
 
-REPOSITORY ?= github.com/kube-argus/kube-argus
+REPOSITORY ?= ghcr.io/kube-argus
 VERSION    ?= latest
 BUNDLE     ?=
 
-BUNDLES := operator service proxy
-IMG      := $(REPOSITORY)/$(BUNDLE):$(VERSION)
+BUNDLES := operator broker proxy
+IMG      := $(REPOSITORY)/kargus-$(BUNDLE):$(VERSION)
 
 # Each bundle is a --target in the single root Dockerfile. Empty BUNDLE => "all"
 # (handled in the recipes); a non-empty invalid BUNDLE errors.
@@ -55,7 +55,7 @@ endif
 ## image: print the resolved image ref(s)
 image:
 ifeq ($(strip $(BUNDLE)),)
-	@for b in $(BUNDLES); do echo $(REPOSITORY)/$$b:$(VERSION); done
+	@for b in $(BUNDLES); do echo $(REPOSITORY)/kargus-$$b:$(VERSION); done
 else
 	@echo $(IMG)
 endif

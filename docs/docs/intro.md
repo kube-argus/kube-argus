@@ -21,8 +21,10 @@ Cluster operators tag the `Role`s and `ClusterRole`s they want to expose with an
 annotation, `rbac.kargus.io/group: <group-id>`. When a `UserAuthenticationBind`
 lands, the operator creates a `ServiceAccount` for the user, scans every
 annotated role, and binds the user's ServiceAccount to each role whose group is
-listed in the bind's `spec.memberships`. Membership changes re-sync; the bind
-expires after its TTL.
+listed in the bind's `spec.memberships`. Membership changes re-sync on the next
+fresh login — token refreshes reuse the groups cached at login, for up to
+`BIND_TTL` (see [Revocation window](./broker.md#revocation-window--ttl-tuning));
+the bind expires after its TTL.
 
 ## Repository layout
 
