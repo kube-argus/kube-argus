@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -40,8 +41,14 @@ import (
 // with no envtest binaries required (unlike the Ginkgo suite in suite_test.go).
 
 const (
-	crUID = "test-uid"
-	crNS  = "default"
+	crUID              = "test-uid"
+	crNS               = "default"
+	crName             = "bind"
+	defaultTTL         = "12h"
+	clusterRoleRefKind = "ClusterRole"
+	defaultUser        = "admin"
+	serviceAccountKind = "ServiceAccount"
+	roleEditor         = "editor"
 )
 
 func testScheme(t *testing.T) *runtime.Scheme {
@@ -67,20 +74,20 @@ func newReconciler(t *testing.T, objs ...client.Object) (*UserAuthenticationBind
 // bindFixture builds a CR pre-seeded with finalizer + pending status so a single
 // Reconcile proceeds straight into the bind flow.
 func bindFixture(memberships ...string) *gwoidciov1.UserAuthenticationBind {
-	var ms []gwoidciov1.Membership
+	ms := make([]gwoidciov1.Membership, 0, len(memberships))
 	for _, g := range memberships {
 		ms = append(ms, gwoidciov1.Membership{Gid: g, Name: "n", Domain: "d"})
 	}
 	return &gwoidciov1.UserAuthenticationBind{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              "bind",
+			Name:              crName,
 			Namespace:         crNS,
 			UID:               crUID,
 			Finalizers:        []string{finalizer},
 			CreationTimestamp: metav1.Now(),
 		},
 		Spec: gwoidciov1.UserAuthenticationBindSpec{
-			TTL: "12h", Domain: "kargus.io", User: "admin", Memberships: ms,
+			TTL: defaultTTL, Domain: "kargus.io", User: defaultUser, Memberships: ms,
 		},
 		Status: gwoidciov1.UserAuthenticationBindStatus{
 			Sv: gwoidciov1.ServiceBind{Status: gwoidciov1.BindPending},
@@ -91,7 +98,7 @@ func bindFixture(memberships ...string) *gwoidciov1.UserAuthenticationBind {
 func reconcileOnce(t *testing.T, r *UserAuthenticationBindReconciler) ctrl.Result {
 	t.Helper()
 	res, err := r.Reconcile(context.Background(), ctrl.Request{
-		NamespacedName: types.NamespacedName{Name: "bind", Namespace: crNS},
+		NamespacedName: types.NamespacedName{Name: crName, Namespace: crNS},
 	})
 	if err != nil {
 		t.Fatalf("Reconcile: %v", err)
@@ -102,7 +109,7 @@ func reconcileOnce(t *testing.T, r *UserAuthenticationBindReconciler) ctrl.Resul
 func getBind(t *testing.T, c client.Client) *gwoidciov1.UserAuthenticationBind {
 	t.Helper()
 	var b gwoidciov1.UserAuthenticationBind
-	if err := c.Get(context.Background(), types.NamespacedName{Name: "bind", Namespace: crNS}, &b); err != nil {
+	if err := c.Get(context.Background(), types.NamespacedName{Name: crName, Namespace: crNS}, &b); err != nil {
 		t.Fatalf("get CR: %v", err)
 	}
 	return &b
@@ -126,8 +133,8 @@ func role(name, ns, group string) *rbacv1.Role {
 
 func TestReconcile_AddsFinalizer(t *testing.T) {
 	cr := &gwoidciov1.UserAuthenticationBind{
-		ObjectMeta: metav1.ObjectMeta{Name: "bind", Namespace: crNS, UID: crUID, CreationTimestamp: metav1.Now()},
-		Spec:       gwoidciov1.UserAuthenticationBindSpec{TTL: "12h", Domain: "d", User: "admin"},
+		ObjectMeta: metav1.ObjectMeta{Name: crName, Namespace: crNS, UID: crUID, CreationTimestamp: metav1.Now()},
+		Spec:       gwoidciov1.UserAuthenticationBindSpec{TTL: defaultTTL, Domain: "d", User: defaultUser},
 	}
 	r, c := newReconciler(t, cr)
 
@@ -141,15 +148,15 @@ func TestReconcile_AddsFinalizer(t *testing.T) {
 func TestReconcile_PendingThenBinds(t *testing.T) {
 	// Plain CR (no pre-seeded status) drives the full create path over reconciles.
 	cr := &gwoidciov1.UserAuthenticationBind{
-		ObjectMeta: metav1.ObjectMeta{Name: "bind", Namespace: crNS, UID: crUID, CreationTimestamp: metav1.Now()},
-		Spec:       gwoidciov1.UserAuthenticationBindSpec{TTL: "12h", Domain: "d", User: "admin"},
+		ObjectMeta: metav1.ObjectMeta{Name: crName, Namespace: crNS, UID: crUID, CreationTimestamp: metav1.Now()},
+		Spec:       gwoidciov1.UserAuthenticationBindSpec{TTL: defaultTTL, Domain: "d", User: defaultUser},
 	}
-	r, c := newReconciler(t, cr, clusterRole("admin", ""))
+	r, c := newReconciler(t, cr, clusterRole(defaultUser, ""))
 
 	// 1: finalizer, 2: pending, 3: bind.
 	reconcileOnce(t, r) // adds finalizer
 	res := reconcileOnce(t, r)
-	if !res.Requeue {
+	if res.RequeueAfter <= 0 {
 		t.Fatal("expected requeue after pending")
 	}
 	if got := getBind(t, c).Status.Sv.Status; got != gwoidciov1.BindPending {
@@ -164,11 +171,11 @@ func TestReconcile_PendingThenBinds(t *testing.T) {
 func TestReconcile_FullBind(t *testing.T) {
 	cr := bindFixture("group/g123")
 	r, c := newReconciler(t, cr,
-		clusterRole("editor", "group/g123"),  // match -> ClusterRoleBinding
-		clusterRole("viewer", "group/other"), // no match
-		clusterRole("admin", ""),             // no annotation
-		role("dev", "team", "group/g123"),    // match -> RoleBinding in team
-		role("ops", "team", ""),              // no annotation
+		clusterRole(roleEditor, "group/g123"), // match -> ClusterRoleBinding
+		clusterRole("viewer", "group/other"),  // no match
+		clusterRole(defaultUser, ""),          // no annotation
+		role("dev", "team", "group/g123"),     // match -> RoleBinding in team
+		role("ops", "team", ""),               // no annotation
 	)
 
 	reconcileOnce(t, r)
@@ -188,10 +195,10 @@ func TestReconcile_FullBind(t *testing.T) {
 		t.Fatalf("ClusterRoleBindings = %d, want 1", len(crbs.Items))
 	}
 	crb := crbs.Items[0]
-	if crb.RoleRef.Name != "editor" || crb.RoleRef.Kind != "ClusterRole" {
+	if crb.RoleRef.Name != roleEditor || crb.RoleRef.Kind != clusterRoleRefKind {
 		t.Fatalf("roleRef = %+v", crb.RoleRef)
 	}
-	if len(crb.Subjects) != 1 || crb.Subjects[0].Name != "admin" || crb.Subjects[0].Kind != "ServiceAccount" {
+	if len(crb.Subjects) != 1 || crb.Subjects[0].Name != defaultUser || crb.Subjects[0].Kind != serviceAccountKind {
 		t.Fatalf("subjects = %+v", crb.Subjects)
 	}
 
@@ -243,9 +250,9 @@ func TestReconcile_PrunesStaleBindings(t *testing.T) {
 	// Membership empty -> previously-owned binding must be pruned.
 	stale := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "kargus-test-uid-old", Labels: map[string]string{ownerLabel: crUID}},
-		RoleRef:    rbacv1.RoleRef{APIGroup: rbacAPIGroup, Kind: "ClusterRole", Name: "old"},
+		RoleRef:    rbacv1.RoleRef{APIGroup: rbacAPIGroup, Kind: clusterRoleKind, Name: "old"},
 	}
-	r, c := newReconciler(t, bindFixture(), clusterRole("editor", "group/g123"), stale)
+	r, c := newReconciler(t, bindFixture(), clusterRole(roleEditor, "group/g123"), stale)
 
 	reconcileOnce(t, r)
 
@@ -277,7 +284,7 @@ func TestReconcile_ExpiredUnbinds(t *testing.T) {
 	cr.CreationTimestamp = metav1.NewTime(time.Now().Add(-time.Hour))
 	owned := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "kargus-test-uid-editor", Labels: map[string]string{ownerLabel: crUID}},
-		RoleRef:    rbacv1.RoleRef{APIGroup: rbacAPIGroup, Kind: "ClusterRole", Name: "editor"},
+		RoleRef:    rbacv1.RoleRef{APIGroup: rbacAPIGroup, Kind: clusterRoleKind, Name: roleEditor},
 	}
 	r, c := newReconciler(t, cr, owned)
 
@@ -298,11 +305,11 @@ func TestReconcile_RenewedAnnotationRebindsExpired(t *testing.T) {
 	// Old creation time (would be expired) but a fresh renewed-at stamp from a
 	// re-login: the bind must renew, not stay unbound.
 	cr := bindFixture("group/g123")
-	cr.Spec.TTL = "12h"
+	cr.Spec.TTL = defaultTTL
 	cr.CreationTimestamp = metav1.NewTime(time.Now().Add(-48 * time.Hour))
 	cr.Annotations = map[string]string{renewedAtAnnotation: time.Now().UTC().Format(time.RFC3339)}
 	cr.Status.Sv.Status = gwoidciov1.BindUnbound
-	r, c := newReconciler(t, cr, clusterRole("editor", "group/g123"))
+	r, c := newReconciler(t, cr, clusterRole(roleEditor, "group/g123"))
 
 	reconcileOnce(t, r)
 
@@ -317,7 +324,7 @@ func TestReconcile_DeleteCleansBindings(t *testing.T) {
 	cr.DeletionTimestamp = &now
 	crb := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "kargus-test-uid-editor", Labels: map[string]string{ownerLabel: crUID}},
-		RoleRef:    rbacv1.RoleRef{APIGroup: rbacAPIGroup, Kind: "ClusterRole", Name: "editor"},
+		RoleRef:    rbacv1.RoleRef{APIGroup: rbacAPIGroup, Kind: clusterRoleKind, Name: roleEditor},
 	}
 	rb := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "kargus-test-uid-dev", Namespace: "team", Labels: map[string]string{ownerLabel: crUID}},
@@ -343,12 +350,7 @@ func TestBindingName(t *testing.T) {
 }
 
 func hasFinalizer(b *gwoidciov1.UserAuthenticationBind) bool {
-	for _, f := range b.Finalizers {
-		if f == finalizer {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(b.Finalizers, finalizer)
 }
 
 func readyTrue(b *gwoidciov1.UserAuthenticationBind) bool {

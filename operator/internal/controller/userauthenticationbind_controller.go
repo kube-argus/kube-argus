@@ -48,7 +48,8 @@ const (
 	// conditionReady is the status condition type reported on the CR.
 	conditionReady = "Ready"
 
-	rbacAPIGroup = "rbac.authorization.k8s.io"
+	rbacAPIGroup    = "rbac.authorization.k8s.io"
+	clusterRoleKind = "ClusterRole"
 )
 
 // UserAuthenticationBindReconciler reconciles a UserAuthenticationBind object
@@ -96,7 +97,7 @@ func (r *UserAuthenticationBindReconciler) Reconcile(ctx context.Context, req ct
 			metav1.ConditionUnknown, "Accepted", "Bind accepted, pending sync"); err != nil {
 			return ctrl.Result{}, err
 		}
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Nanosecond}, nil
 	}
 
 	ttl, err := time.ParseDuration(bind.Spec.TTL)
@@ -217,7 +218,7 @@ func (r *UserAuthenticationBindReconciler) syncBindings(
 		desiredCRB[name] = true
 		crb := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{Name: name, Labels: map[string]string{ownerLabel: cruid}},
-			RoleRef:    rbacv1.RoleRef{APIGroup: rbacAPIGroup, Kind: "ClusterRole", Name: role.Name},
+			RoleRef:    rbacv1.RoleRef{APIGroup: rbacAPIGroup, Kind: clusterRoleKind, Name: role.Name},
 			Subjects:   []rbacv1.Subject{subject},
 		}
 		if err := r.Create(ctx, crb); err != nil && !apierrors.IsAlreadyExists(err) {
