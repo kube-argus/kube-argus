@@ -20,6 +20,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -72,8 +73,10 @@ var _ = BeforeSuite(func() {
 	}
 
 	// Retrieve the first found binary directory to allow running tests from IDEs
-	if getFirstFoundEnvTestBinaryDir() != "" {
-		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
+	if envTestBinaryDir := getFirstFoundEnvTestBinaryDir(); envTestBinaryDir != "" {
+		testEnv.BinaryAssetsDirectory = envTestBinaryDir
+	} else if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		Skip("envtest binaries not found; run 'make setup-envtest' or set KUBEBUILDER_ASSETS")
 	}
 
 	// cfg is defined in this file globally.
@@ -103,9 +106,19 @@ var _ = AfterSuite(func() {
 // setting the 'KUBEBUILDER_ASSETS' environment variable. To ensure the binaries are
 // properly set up, run 'make setup-envtest' beforehand.
 func getFirstFoundEnvTestBinaryDir() string {
-	basePath := filepath.Join("..", "..", "bin", "k8s")
+	_, filePath, _, ok := runtime.Caller(0)
+	if !ok {
+		logf.Log.Info("Failed to determine suite_test.go path")
+		return ""
+	}
+
+	basePath := filepath.Join(filepath.Dir(filePath), "..", "..", "bin", "k8s")
 	entries, err := os.ReadDir(basePath)
 	if err != nil {
+		if os.IsNotExist(err) {
+			logf.Log.Info("Envtest binaries directory not found", "path", basePath)
+			return ""
+		}
 		logf.Log.Error(err, "Failed to read directory", "path", basePath)
 		return ""
 	}
