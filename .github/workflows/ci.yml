@@ -67,7 +67,22 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6.3.0
         with:
-          go-version-file: operator/go.mod
-      - run: go install golang.org/x/vuln/cmd/govulncheck@latest
-      - run: cd operator && govulncheck ./...
-      - run: cd service && govulncheck ./...
+          go-version-file: go.work
+          cache-dependency-path: |
+            operator/go.sum
+            service/go.sum
+      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.5.0
+      - id: govulncheck-operator
+        name: Run govulncheck (operator)
+        continue-on-error: true
+        run: govulncheck -C operator -format text -show verbose ./...
+      - id: govulncheck-service
+        name: Run govulncheck (service)
+        continue-on-error: true
+        run: govulncheck -C service -format text -show verbose ./...
+      - name: Fail if govulncheck found vulnerabilities
+        if: always()
+        run: |
+          if [ "${{ steps.govulncheck-operator.outcome }}" != "success" ] || [ "${{ steps.govulncheck-service.outcome }}" != "success" ]; then
+            exit 1
+          fi
