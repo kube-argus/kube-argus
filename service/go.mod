@@ -3,11 +3,11 @@ module github.com/kube-argus/kube-argus/service
 go 1.26.4
 
 require (
-	github.com/coreos/go-oidc/v3 v3.11.0
+	github.com/coreos/go-oidc/v3 v3.20.0
 	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/kube-argus/kube-argus/operator v0.0.0
 	github.com/redis/go-redis/v9 v9.7.3
-	golang.org/x/oauth2 v0.34.0
+	golang.org/x/oauth2 v0.36.0
 	google.golang.org/api v0.211.0
 	k8s.io/api v0.36.0
 	k8s.io/apimachinery v0.36.0
