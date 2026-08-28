@@ -6,7 +6,7 @@
 #   docker build --target proxy    -t <repo>/kargus-proxy:tag    .
 #
 # Per-module `go mod download` caches deps so source changes don't re-download.
-FROM golang:1.26 AS gobase
+FROM golang:1.27 AS gobase
 ARG TARGETOS
 ARG TARGETARCH
 ENV CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH}
